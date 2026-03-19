@@ -3,6 +3,21 @@ let currentWorkflow = null;
 let playgroundWorkflow = null;
 let playgroundPromptId = "";
 
+function formatRelativeTime(date) {
+  const now = new Date();
+  const diff = now - date;
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (seconds < 60) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
+}
+
 async function jsonFetch(url, opts = {}) {
   const r = await fetch(url, {
     headers: { "Content-Type": "application/json" },
@@ -62,9 +77,6 @@ async function loadHealth() {
 
 async function loadPluginStatus() {
   const badge = document.getElementById("pluginStatus");
-  const syncBtn = document.getElementById("syncBtn");
-  const pendingCount = document.getElementById("pendingCount");
-  
   if (!badge) return;
   
   const textEl = badge.querySelector(".status-text");
@@ -78,42 +90,13 @@ async function loadPluginStatus() {
     if (status.installed) {
       badge.classList.add("connected");
       textEl.textContent = `Plugin: v${status.version || "?"}`;
-      
-      // Show sync button if there are pending workflows
-      const pending = status.pending_count || 0;
-      if (pending > 0 && syncBtn && pendingCount) {
-        syncBtn.classList.remove("hidden");
-        pendingCount.textContent = pending;
-      } else if (syncBtn) {
-        syncBtn.classList.add("hidden");
-      }
     } else {
       badge.classList.add("not-installed");
       textEl.textContent = "Plugin: Not Installed";
-      if (syncBtn) syncBtn.classList.add("hidden");
     }
   } catch (e) {
     badge.classList.add("not-installed");
     textEl.textContent = "Plugin: Not Detected";
-    if (syncBtn) syncBtn.classList.add("hidden");
-  }
-}
-
-async function syncPendingWorkflows() {
-  try {
-    const result = await jsonFetch("/api/sync-pending", { method: "POST" });
-    if (result.synced > 0) {
-      showToast(`Synced ${result.synced} workflow(s)`, "success");
-      await loadWorkflows();
-    } else {
-      showToast("No new workflows to sync", "info");
-    }
-    if (result.errors && result.errors.length > 0) {
-      console.warn("Sync errors:", result.errors);
-    }
-    await loadPluginStatus();
-  } catch (e) {
-    showToast(`Sync failed: ${e.message}`, "error");
   }
 }
 
@@ -171,10 +154,11 @@ async function loadWorkflows() {
   for (const wf of list) {
     const li = document.createElement("li");
     li.dataset.id = wf.id;
+    const updatedAt = wf.updated_at ? formatRelativeTime(new Date(wf.updated_at)) : "";
     li.innerHTML = `
       <div class="wf-info">
         <strong>${escapeHtml(wf.name || wf.id)}</strong>
-        <small>${wf.params_count} params · v${wf.version}</small>
+        <small>${wf.params_count} params · v${wf.version}${updatedAt ? ` · ${updatedAt}` : ""}</small>
       </div>
       <div class="wf-actions">
         <div class="wf-copy-dropdown">
@@ -968,18 +952,14 @@ async function importWorkflow(payload) {
 }
 
 function initEventListeners() {
-  // Sync button (header)
-  document.getElementById("syncBtn")?.addEventListener("click", async () => {
-    await syncPendingWorkflows();
-  });
-
   // Refresh button (workflow list sidebar)
   document.getElementById("refreshWorkflowBtn")?.addEventListener("click", async (e) => {
     const btn = e.currentTarget;
     if (btn.classList.contains("spinning")) return;
     btn.classList.add("spinning");
     try {
-      await syncPendingWorkflows();
+      await loadWorkflows();
+      showToast("Workflows refreshed", "success");
     } finally {
       btn.classList.remove("spinning");
     }

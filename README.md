@@ -1,202 +1,171 @@
-# comfy-swap
+# Comfy-Swap
 
-`comfy-swap` turns ComfyUI workflows into stable, callable APIs and CLI commands.
+[English](README.md) | [中文](README_CN.md)
 
-It is inspired by `llama-swap`, but tailored for ComfyUI workflow exposure, mapping, and maintenance.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Highlights
+**Comfy-Swap** exposes ComfyUI workflows as stable, production-ready APIs. It bridges the gap between ComfyUI's visual workflow design and real-world application integration.
 
-- Convert ComfyUI workflows into reusable APIs via a ComfyUI plugin.
-- Map one API parameter to multiple workflow targets (`targets[]`).
-- Keep API contracts stable while workflows evolve (`re-connect` + update).
-- Use either HTTP API or CLI (same binary, same behavior).
-- Support image inputs (`image=@file.png`) and output download.
-- Built-in web Playground to test params and generation quickly.
-- Backup and restore all runtime data.
-- Optional one-command plugin installation.
+## What It Does
 
-## Architecture
+Comfy-Swap turns complex ComfyUI workflows into **simple, unified API endpoints** that are:
 
-- **Server mode**: `comfy-swap serve`
-- **CLI mode**: all other commands (`run`, `list`, `info`, etc.)
-- **Storage**: local filesystem under `data/`
-  - `data/settings.json`
-  - `data/workflows/*.json`
+- **AI Agent Friendly** — Clean JSON interface, predictable parameters, easy for LLMs and automation tools to call
+- **Developer Friendly** — Same workflow, same parameters, whether you use REST API or CLI
+- **Production Ready** — Stable API contracts that don't break when you update your workflow internals
+
+### REST API
+
+```bash
+curl -X POST 'http://localhost:8189/api/prompt' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "workflow_id": "portrait-gen",
+    "params": {
+      "prompt": "professional headshot, studio lighting",
+      "seed": 42
+    }
+  }'
+```
+
+### CLI
+
+```bash
+comfy-swap run portrait-gen -p prompt="professional headshot" -p seed="42" --wait --save ./output/
+```
+
+**Same workflow. Same parameters. Choose your interface.**
+
+## Why Comfy-Swap?
+
+| Problem | Solution |
+|---------|----------|
+| ComfyUI workflows are complex JSON with node IDs | Comfy-Swap provides named parameters like `prompt`, `seed`, `image` |
+| Changing workflow internals breaks integrations | Parameter mapping keeps your API stable |
+| Hard to call from scripts, agents, or automation | Simple REST/CLI with consistent interface |
+| No unified way to track API usage | Built-in request logging with filtering |
+
+## Key Features
+
+- **Workflow → API**: Export any ComfyUI workflow as a callable API endpoint
+- **Parameter Mapping**: Map friendly names to internal node fields (one param → multiple nodes)
+- **Dual Interface**: REST API and CLI share identical parameters
+- **Image I/O**: Upload images as inputs, download generated outputs
+- **Request Logs**: Track all API calls with workflow filtering and time range
+- **Web Playground**: Test workflows interactively before integration
+- **Backup/Restore**: Export all configurations for migration
+
+## What It Does NOT Do
+
+Comfy-Swap focuses on **workflow exposure and API integration**. It intentionally does not:
+
+- ❌ Manage ComfyUI installation or updates
+- ❌ Install or manage custom nodes
+- ❌ Provide workflow editing UI
+- ❌ Replace ComfyUI's execution engine
+
+These are handled by ComfyUI itself or [ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager).
+
+---
 
 ## Quick Start
 
-### 1) Build
+### 1. Download & Run
+
+Download the latest release for your platform from [**Releases**](https://github.com/your-repo/comfy-swap/releases).
 
 ```bash
-# Linux / macOS
-go build -o comfy-swap .
-
-# Windows (PowerShell)
-go build -o comfy-swap.exe .
-```
-
-### 2) Start server
-
-```bash
-# Linux / macOS
-./comfy-swap serve --port 8189 --data-dir ./data
-
-# Windows (PowerShell)
+# Windows
 .\comfy-swap.exe serve --port 8189 --data-dir ./data
+
+# macOS / Linux
+./comfy-swap serve --port 8189 --data-dir ./data
 ```
 
-Open `http://localhost:8189` and complete the first-run wizard.
+Open `http://localhost:8189` to complete setup.
 
-### 3) Install ComfyUI plugin
+> **Build from source:** `git clone` + `go build -o comfy-swap .` (requires Go 1.21+)
+
+### 2. Install ComfyUI Plugin
+
+**Option A: Git Clone (Recommended)**
 
 ```bash
-# Linux / macOS
-./comfy-swap install-plugin /path/to/ComfyUI/custom_nodes
-
-# Windows (PowerShell)
-.\comfy-swap.exe install-plugin D:\ComfyUI\custom_nodes
+cd /path/to/ComfyUI/custom_nodes
+git clone https://github.com/your-repo/ComfyUI-ComfySwap.git
 ```
 
-Then refresh the ComfyUI page.
+Restart ComfyUI after installation.
 
-### 4) Connect a workflow from ComfyUI
+<details>
+<summary><b>Option B: Download ZIP</b></summary>
 
-In ComfyUI:
+1. Open Comfy-Swap web UI (`http://localhost:8189`)
+2. Go to **Settings** → **Plugin Installation** → **Download**
+3. Click **Download Plugin ZIP**
+4. Extract to `ComfyUI/custom_nodes/ComfyUI-ComfySwap`
+5. Restart ComfyUI
 
-- `File` -> `Export` -> `Connect to Comfy Swap`
-- Adjust parameter mapping in the popup
-- Click `Connect`
+</details>
 
-The workflow will be available from both API and CLI.
+### 3. Export Your Workflow
 
-### 5) Validate in Playground
+In ComfyUI: Right-click canvas → **Export to ComfySwap** → Configure parameters → Swap
 
-Open the `Playground` section in the web UI:
+This makes your workflow available through Comfy-Swap's unified API and CLI interface.
 
-- Select a workflow
-- Fill params (including image upload params)
-- Click `Run` or `Run and Wait`
-- Inspect generated images and raw history payload
-
-## CLI Usage
-
-### Health
+### 4. Call Your API
 
 ```bash
-# Linux / macOS
-./comfy-swap health
+# REST API
+curl -X POST 'http://localhost:8189/api/prompt' \
+  -H 'Content-Type: application/json' \
+  -d '{"workflow_id": "my-workflow", "params": {"prompt": "a cat"}}'
 
-# Windows (PowerShell)
-.\comfy-swap.exe health
+# CLI
+./comfy-swap run my-workflow -p prompt="a cat" --wait
 ```
 
-### List workflows
+## CLI Commands
 
 ```bash
-# Linux / macOS
-./comfy-swap list
-./comfy-swap list -q
-
-# Windows (PowerShell)
-.\comfy-swap.exe list
-.\comfy-swap.exe list -q
+# Show all commands and options
+./comfy-swap --help
+./comfy-swap run --help
 ```
 
-### Show workflow details
+| Command | Description |
+|---------|-------------|
+| `serve` | Start HTTP server |
+| `run <id> -p key=value` | Execute workflow |
+| `list` | List all workflows |
+| `info <id>` | Show workflow details |
+| `status <prompt_id>` | Check execution status |
+| `result <prompt_id>` | Get results (with `--save`) |
+| `health` | Server health check |
 
-```bash
-# Linux / macOS
-./comfy-swap info txt2img
+**Global flags:** `-s, --server` (server URL), `-q, --quiet`, `--json`, `--pretty`
 
-# Windows (PowerShell)
-.\comfy-swap.exe info txt2img
-```
+## API Endpoints
 
-### Run workflow
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/prompt` | POST | Execute workflow |
+| `/api/workflows` | GET | List workflows |
+| `/api/workflows/{id}` | GET | Get workflow details |
+| `/api/history/{prompt_id}` | GET | Execution history |
+| `/api/logs` | GET | Request logs |
+| `/api/upload` | POST | Upload image |
+| `/api/view` | GET | Download output |
 
-```bash
-# Async (default)
-./comfy-swap run txt2img prompt="a cat" seed=42
-
-# Wait until complete
-./comfy-swap run txt2img prompt="a cat" --wait
-
-# Wait + save outputs
-./comfy-swap run txt2img prompt="a cat" --wait --save ./output/
-
-# Quiet mode (stdout is only prompt_id or file path)
-./comfy-swap run txt2img prompt="a cat" --wait --save ./output/ -q
-
-# Windows (PowerShell) example
-.\comfy-swap.exe run txt2img prompt="a cat" --wait --save .\output\ -q
-```
-
-### `@file` support
-
-```bash
-# Long text prompt from file
-./comfy-swap run txt2img prompt=@prompt.txt --wait --save ./out/
-
-# Image upload for image-type params
-./comfy-swap run img2img image=@input.png prompt="watercolor style" --wait --save ./out/
-
-# Windows (PowerShell) examples
-.\comfy-swap.exe run txt2img prompt=@prompt.txt --wait --save .\out\
-.\comfy-swap.exe run img2img image=@input.png prompt="watercolor style" --wait --save .\out\
-```
-
-### Status and result
-
-```bash
-# Linux / macOS
-./comfy-swap status <prompt_id>
-./comfy-swap result <prompt_id>
-./comfy-swap result <prompt_id> --save ./output/
-
-# Windows (PowerShell)
-.\comfy-swap.exe status <prompt_id>
-.\comfy-swap.exe result <prompt_id>
-.\comfy-swap.exe result <prompt_id> --save .\output\
-```
-
-## HTTP API (summary)
-
-- `GET /api/health`
-- `GET /api/settings`
-- `PUT /api/settings`
-- `GET /api/settings/status`
-- `POST /api/workflows`
-- `GET /api/workflows`
-- `GET /api/workflows/{id}`
-- `PUT /api/workflows/{id}`
-- `PATCH /api/workflows/{id}/mapping`
-- `DELETE /api/workflows/{id}`
-- `POST /api/upload`
-- `POST /api/prompt`
-- `GET /api/history/{prompt_id}`
-- `GET /api/view`
-- `GET /api/backup`
-- `POST /api/restore`
-- `POST /api/install-plugin`
-
-## Parameter Mapping Model
-
-Each workflow file (`data/workflows/{id}.json`) includes:
-
-- `comfyui_workflow`: API-format ComfyUI graph
-- `param_mapping[]`:
-  - `name`
-  - `type`: `string | integer | float | boolean | image`
-  - `default`
-  - `targets[]`: one-to-many mapping (`node_id`, `field`)
-
-Example:
+## Parameter Mapping
 
 ```json
 {
   "name": "seed",
   "type": "integer",
-  "default": 0,
+  "default": -1,
+  "description": "Random seed, -1 for random",
   "targets": [
     { "node_id": "3", "field": "seed" },
     { "node_id": "9", "field": "seed" }
@@ -204,35 +173,8 @@ Example:
 }
 ```
 
-## Development
+One `seed` parameter automatically updates multiple nodes. Your API stays clean.
 
-### Run tests
+## License
 
-```bash
-go test ./...
-```
-
-### Build
-
-```bash
-go build ./...
-```
-
-### CI Workflow
-
-GitHub Actions workflow is included at `.github/workflows/ci.yml` and runs:
-
-- `go test ./...`
-- `go build ./...`
-
-### Lint/format
-
-```bash
-gofmt -w .
-```
-
-## Notes
-
-- `comfy-swap` does not replace ComfyUI execution; it orchestrates and proxies it.
-- For remote ComfyUI, skip wizard auto-install and run `install-plugin` on that machine.
-- API compatibility is preserved as long as mapped API parameter names remain stable.
+[MIT](LICENSE)
