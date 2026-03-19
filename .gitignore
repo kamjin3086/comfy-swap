@@ -1,0 +1,27 @@
+# Binaries
+comfy-swap
+comfy-swap.exe
+comfy-swap.exe~
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build and coverage artifacts
+coverage.out
+coverage.txt
+dist/
+bin/
+
+# Runtime data
+data/
+output/
+out/
+
+# IDE / OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Comfy-Swap</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+            <span>Comfy-Swap</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div id="pluginStatus" class="status-badge plugin-status">
+            <span class="status-dot"></span>
+            <span class="status-text">Plugin: --</span>
+          </div>
+          <button id="syncBtn" class="btn btn-sm btn-primary hidden" title="Sync pending workflows">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            Sync (<span id="pendingCount">0</span>)
+          </button>
+          <div id="status" class="status-badge">
+            <span class="status-dot"></span>
+            <span class="status-text">Loading...</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- First Run Wizard -->
+      <section id="wizard" class="wizard-overlay hidden">
+        <div class="wizard-card">
+          <div class="wizard-header">
+            <h2>Welcome to Comfy-Swap</h2>
+            <p>Let's get started by configuring your ComfyUI connection</p>
+          </div>
+          <div class="wizard-body">
+            <div class="form-group">
+              <label for="wizardComfyUrl">ComfyUI URL</label>
+              <input id="wizardComfyUrl" type="text" placeholder="http://127.0.0.1:8188" />
+              <span class="form-hint">Enter your ComfyUI server address</span>
+            </div>
+            <button id="wizardSaveSettings" class="btn btn-primary btn-lg btn-block">
+              Save and Continue
+            </button>
+            
+            <div class="wizard-divider">
+              <span>Optional</span>
+            </div>
+            
+            <div class="form-group">
+              <label for="wizardCustomNodesPath">ComfyUI Custom Nodes Path</label>
+              <input id="wizardCustomNodesPath" type="text" placeholder="D:\ComfyUI\custom_nodes" />
+              <span class="form-hint">For local ComfyUI, auto-install the sync plugin</span>
+            </div>
+            <button id="wizardInstallPlugin" class="btn btn-secondary btn-block">
+              Install Plugin
+            </button>
+            <p class="wizard-skip-hint">Skip plugin installation for remote ComfyUI servers</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Dashboard -->
+      <main id="dashboard" class="dashboard hidden">
+        <!-- Tab Navigation -->
+        <nav class="tab-nav">
+          <button class="tab-btn active" data-tab="workflows">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            Workflows
+          </button>
+          <button class="tab-btn" data-tab="playground">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Playground
+          </button>
+          <button class="tab-btn" data-tab="settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Settings
+          </button>
+        </nav>
+
+        <!-- Tab Content: Workflows -->
+        <section id="tab-workflows" class="tab-content active">
+          <div class="content-header">
+            <h2>Workflows</h2>
+            <p>Manage your ComfyUI workflow configurations</p>
+          </div>
+          <div class="workflow-grid">
+            <div class="workflow-sidebar">
+              <div class="sidebar-header">
+                <h3>Available Workflows</h3>
+                <div class="sidebar-actions">
+                  <button id="refreshWorkflowBtn" class="btn btn-sm btn-icon-only" title="Refresh workflows from ComfyUI plugin">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="23 4 23 10 17 10"/>
+                      <polyline points="1 20 1 14 7 14"/>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                  </button>
+                  <button id="importWorkflowBtn" class="btn btn-sm btn-primary" title="Import Workflow">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Import
+                  </button>
+                </div>
+              </div>
+              <ul id="workflowList" class="workflow-list">
+                <li class="workflow-empty">No workflows found</li>
+              </ul>
+            </div>
+            
+            <!-- Import Workflow Modal -->
+            <div id="importModal" class="modal-overlay hidden">
+              <div class="modal-card">
+                <div class="modal-header">
+                  <h3>Import Workflow</h3>
+                  <button id="closeImportModal" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                  <div class="import-tabs">
+                    <button class="import-tab active" data-import-tab="paste">Paste JSON</button>
+                    <button class="import-tab" data-import-tab="upload">Upload File</button>
+                  </div>
+                  
+                  <div id="import-paste" class="import-panel active">
+                    <p class="import-desc">Paste the JSON exported from ComfyUI-ComfySwap plugin:</p>
+                    <textarea id="importJsonText" placeholder='{"id": "my-workflow", "name": "My Workflow", ...}'></textarea>
+                    <button id="importFromPaste" class="btn btn-primary btn-block">Import from Clipboard</button>
+                  </div>
+                  
+                  <div id="import-upload" class="import-panel">
+                    <p class="import-desc">Upload a JSON file exported from ComfyUI:</p>
+                    <label class="file-upload">
+                      <input id="importJsonFile" type="file" accept=".json" />
+                      <span class="file-upload-label">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="17 8 12 3 7 8"/>
+                          <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Choose JSON file...
+                      </span>
+                    </label>
+                    <button id="importFromFile" class="btn btn-primary btn-block">Import from File</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="workflow-main">
+              <div id="workflowDetail" class="workflow-detail">
+                <div class="empty-state">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  <p>Select a workflow to view and edit its details</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab Content: Playground -->
+        <section id="tab-playground" class="tab-content">
+          <div class="content-header">
+            <h2>Playground</h2>
+            <p>Test your workflows and generate images</p>
+          </div>
+          <div class="playground-container">
+            <div class="playground-controls">
+              <div class="form-group">
+                <label for="playgroundWorkflow">Select Workflow</label>
+                <select id="playgroundWorkflow">
+                  <option value="">No workflows available</option>
+                </select>
+              </div>
+              <div id="playgroundParams" class="params-grid"></div>
+              <div class="playground-actions">
+                <button id="playgroundRun" class="btn btn-secondary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                  Run
+                </button>
+                <button id="playgroundRunWait" class="btn btn-primary">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                  Run and Wait
+                </button>
+              </div>
+            </div>
+            <div class="playground-result">
+              <div class="result-header">
+                <h3>Output</h3>
+              </div>
+              <div id="playgroundResult" class="result-content">
+                <div class="empty-state">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <p>Run a workflow to see generated images here</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab Content: Settings -->
+        <section id="tab-settings" class="tab-content">
+          <div class="content-header">
+            <h2>Settings</h2>
+            <p>Configure Comfy-Swap and manage your data</p>
+          </div>
+          <div class="settings-grid">
+            <!-- Connection Settings -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <h3>Connection</h3>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-group">
+                  <label for="comfyUrl">ComfyUI URL</label>
+                  <input id="comfyUrl" type="text" placeholder="http://127.0.0.1:8188" />
+                </div>
+                <button id="saveSettings" class="btn btn-primary">Save Settings</button>
+              </div>
+            </div>
+
+            <!-- Plugin Installation -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                  <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <h3>Plugin Installation</h3>
+              </div>
+              <div class="settings-card-body">
+                <!-- Mini Tabs -->
+                <div class="mini-tabs">
+                  <button class="mini-tab active" data-install-tab="local">Local</button>
+                  <button class="mini-tab" data-install-tab="remote">Remote</button>
+                </div>
+
+                <!-- Local Installation Panel -->
+                <div id="install-local" class="install-panel active">
+                  <p class="install-panel-desc">Auto-install plugin to a local ComfyUI instance</p>
+                  <div class="form-group">
+                    <label for="settingsCustomNodesPath">Custom Nodes Path</label>
+                    <input id="settingsCustomNodesPath" type="text" placeholder="D:\ComfyUI\custom_nodes" />
+                  </div>
+                  <button id="settingsInstallPlugin" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Install Plugin
+                  </button>
+                </div>
+
+                <!-- Remote Installation Panel -->
+                <div id="install-remote" class="install-panel">
+                  <p class="install-panel-desc">Run this command in your <strong>ComfyUI root directory</strong> on the remote server:</p>
+                  <div class="command-box">
+                    <code id="installCommand">curl -sL <span id="installCommandUrl"></span>/api/download-plugin | python -c "import sys,zipfile,io; zipfile.ZipFile(io.BytesIO(sys.stdin.buffer.read())).extractall('custom_nodes')"</code>
+                    <button id="copyInstallCommand" class="btn-icon" title="Copy command">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="install-alt">
+                    <span>Or download manually:</span>
+                    <a href="/api/download-plugin" class="btn btn-sm btn-secondary" download="comfy-swap-plugin.zip">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      Download ZIP
+                    </a>
+                  </div>
+                  <div class="install-note">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="16" x2="12" y2="12"/>
+                      <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    <span>Extract the ZIP file, place <code>ComfyUI-ComfySwap</code> folder into <code>ComfyUI/custom_nodes/</code>, then restart ComfyUI.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Backup & Restore -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <h3>Backup & Restore</h3>
+              </div>
+              <div class="settings-card-body">
+                <p class="settings-desc">Export your workflows and settings or restore from a backup</p>
+                <div class="backup-actions">
+                  <a class="btn btn-secondary" href="/api/backup" target="_blank" rel="noreferrer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download Backup
+                  </a>
+                </div>
+                <div class="restore-section">
+                  <label class="file-upload">
+                    <input id="restoreFile" type="file" accept=".zip" />
+                    <span class="file-upload-label">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      Choose backup file...
+                    </span>
+                  </label>
+                  <button id="restoreBtn" class="btn btn-secondary">Restore</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="/app.js"></script>
+  </body>
+</html>
