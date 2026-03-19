@@ -19,13 +19,25 @@ type ServerConfig struct {
 }
 
 type Settings struct {
-	ComfyUIURL string    `json:"comfyui_url"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ComfyUIURL       string    `json:"comfyui_url"`
+	LogRetentionDays int       `json:"log_retention_days"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+func (s *Settings) GetLogRetentionDays() int {
+	if s == nil || s.LogRetentionDays <= 0 {
+		return 7
+	}
+	return s.LogRetentionDays
 }
 
 func ResolveDataPaths(dataDir string) (settingsPath, workflowsDir string) {
 	return filepath.Join(dataDir, "settings.json"), filepath.Join(dataDir, "workflows")
+}
+
+func ResolveLogsDir(dataDir string) string {
+	return filepath.Join(dataDir, "logs")
 }
 
 func EnsureDataDir(dataDir string) error {

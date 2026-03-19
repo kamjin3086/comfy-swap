@@ -15,9 +15,12 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"comfy-swap/internal/config"
+	"comfy-swap/internal/logs"
 	"comfy-swap/internal/proxy"
 	"comfy-swap/internal/workflow"
 
@@ -28,6 +31,7 @@ type App struct {
 	DataDir      string
 	SettingsPath string
 	Manager      *workflow.Manager
+	LogManager   *logs.Manager
 	WebFS        embed.FS
 	PluginFS     embed.FS
 	ProxyFactory func(comfyURL string) *proxy.ComfyProxy
@@ -35,6 +39,7 @@ type App struct {
 
 func New(dataDir string, webFS embed.FS, pluginFS embed.FS) (*App, error) {
 	settingsPath, workflowsDir := config.ResolveDataPaths(dataDir)
+	logsDir := config.ResolveLogsDir(dataDir)
 	if err := config.EnsureDataDir(dataDir); err != nil {
 		return nil, err
 	}
@@ -42,6 +47,7 @@ func New(dataDir string, webFS embed.FS, pluginFS embed.FS) (*App, error) {
 		DataDir:      dataDir,
 		SettingsPath: settingsPath,
 		Manager:      workflow.NewManager(workflowsDir),
+		LogManager:   logs.NewManager(logsDir),
 		WebFS:        webFS,
 		PluginFS:     pluginFS,
 		ProxyFactory: proxy.New,
@@ -75,6 +81,10 @@ func (a *App) Router() http.Handler {
 	r.Get("/api/download-plugin", a.handleDownloadPlugin)
 	r.Get("/api/plugin-status", a.handlePluginStatus)
 	r.Post("/api/sync-pending", a.handleSyncPending)
+
+	r.Get("/api/logs", a.handleGetLogs)
+	r.Get("/api/logs/{workflow_id}", a.handleGetWorkflowLogs)
+	r.Delete("/api/logs/cleanup", a.handleCleanupLogs)
 
 	r.Get("/*", a.handleWeb)
 	return r
@@ -271,6 +281,12 @@ func (a *App) handleUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) handlePrompt(w http.ResponseWriter, r *http.Request) {
+	startTime := time.Now()
+	source := "api"
+	if r.Header.Get("X-Comfy-Swap-Source") == "playground" {
+		source = "playground"
+	}
+
 	p, err := a.loadProxy()
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err)
@@ -281,21 +297,49 @@ func (a *App) handlePrompt(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, err)
 		return
 	}
+
+	logEntry := logs.LogEntry{
+		WorkflowID: req.WorkflowID,
+		Timestamp:  startTime,
+		Params:     req.Params,
+		Source:     source,
+	}
+
 	wf, err := a.Manager.Get(req.WorkflowID)
 	if err != nil {
+		logEntry.Status = "error"
+		logEntry.Error = "workflow not found: " + err.Error()
+		logEntry.Duration = time.Since(startTime).Milliseconds()
+		_ = a.LogManager.Add(logEntry)
 		writeErr(w, http.StatusNotFound, err)
 		return
 	}
 	finalPrompt, warnings, err := a.Manager.ApplyParams(wf, req.Params)
 	if err != nil {
+		logEntry.Status = "error"
+		logEntry.Error = "param apply error: " + err.Error()
+		logEntry.Duration = time.Since(startTime).Milliseconds()
+		_ = a.LogManager.Add(logEntry)
 		writeErr(w, http.StatusBadRequest, err)
 		return
 	}
 	out, err := p.Prompt(r.Context(), finalPrompt)
 	if err != nil {
+		logEntry.Status = "error"
+		logEntry.Error = "comfyui error: " + err.Error()
+		logEntry.Duration = time.Since(startTime).Milliseconds()
+		_ = a.LogManager.Add(logEntry)
 		writeErr(w, http.StatusBadGateway, err)
 		return
 	}
+
+	logEntry.Status = "success"
+	logEntry.Duration = time.Since(startTime).Milliseconds()
+	if pid, ok := out["prompt_id"].(string); ok {
+		logEntry.PromptID = pid
+	}
+	_ = a.LogManager.Add(logEntry)
+
 	out["workflow_id"] = req.WorkflowID
 	if len(warnings) > 0 {
 		out["warnings"] = warnings
@@ -741,4 +785,66 @@ func DownloadOutputToPath(cli *http.Client, serverURL string, q url.Values, save
 	defer out.Close()
 	_, err = io.Copy(out, resp.Body)
 	return err
+}
+
+func (a *App) handleGetLogs(w http.ResponseWriter, r *http.Request) {
+	query := a.parseLogQuery(r)
+	result, err := a.LogManager.Query(query)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (a *App) handleGetWorkflowLogs(w http.ResponseWriter, r *http.Request) {
+	workflowID := chi.URLParam(r, "workflow_id")
+	query := a.parseLogQuery(r)
+	query.WorkflowID = workflowID
+	result, err := a.LogManager.Query(query)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, result)
+}
+
+func (a *App) handleCleanupLogs(w http.ResponseWriter, r *http.Request) {
+	s, _ := a.loadSettings()
+	days := s.GetLogRetentionDays()
+	if err := a.LogManager.Cleanup(days); err != nil {
+		writeErr(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message":        "cleanup completed",
+		"retention_days": days,
+	})
+}
+
+func (a *App) parseLogQuery(r *http.Request) logs.LogQuery {
+	q := logs.LogQuery{}
+
+	if limit := r.URL.Query().Get("limit"); limit != "" {
+		if n, err := strconv.Atoi(limit); err == nil && n > 0 {
+			q.Limit = n
+		}
+	}
+	if offset := r.URL.Query().Get("offset"); offset != "" {
+		if n, err := strconv.Atoi(offset); err == nil && n >= 0 {
+			q.Offset = n
+		}
+	}
+	if start := r.URL.Query().Get("start"); start != "" {
+		if t, err := time.Parse(time.RFC3339, start); err == nil {
+			q.StartTime = &t
+		}
+	}
+	if end := r.URL.Query().Get("end"); end != "" {
+		if t, err := time.Parse(time.RFC3339, end); err == nil {
+			q.EndTime = &t
+		}
+	}
+
+	return q
 }
