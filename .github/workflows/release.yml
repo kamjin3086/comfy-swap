@@ -55,7 +55,9 @@ jobs:
           CGO_ENABLED: 0
         run: |
           mkdir -p dist
-          go build -ldflags="-s -w -X main.Version=${{ inputs.version }}" \
+          VERSION="${{ inputs.version }}"
+          VERSION="${VERSION#v}"
+          go build -ldflags="-s -w -X comfy-swap/cmd.version=${VERSION}" \
             -o dist/comfy-swap-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} .
 
       - name: Upload artifact
