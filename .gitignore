@@ -1,8 +1,8 @@
-# Binaries
-comfy-swap
-comfy-swap.exe
-comfy-swap.exe~
-*.exe
+# Binaries (root directory only)
+/comfy-swap
+/comfy-swap.exe
+/comfy-swap.exe~
+/*.exe
 *.dll
 *.so
 *.dylib

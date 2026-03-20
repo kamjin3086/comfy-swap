@@ -1,0 +1,28 @@
+{
+  "name": "comfy-swap",
+  "version": "1.0.0",
+  "description": "Run ComfyUI workflows as stable APIs via CLI and REST",
+  "author": "kamjin3086",
+  "license": "MIT",
+  "repository": "https://github.com/kamjin3086/comfy-swap",
+  "homepage": "https://github.com/kamjin3086/comfy-swap",
+  "keywords": [
+    "comfyui",
+    "workflow",
+    "image-generation",
+    "ai-art",
+    "api",
+    "cli",
+    "stable-diffusion",
+    "flux"
+  ],
+  "categories": [
+    "ai",
+    "image-generation",
+    "automation"
+  ],
+  "requirements": {
+    "binary": "comfy-swap",
+    "install_url": "https://github.com/kamjin3086/comfy-swap/releases"
+  }
+}
