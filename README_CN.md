@@ -6,6 +6,18 @@
 
 **Comfy-Swap** 将 ComfyUI 工作流暴露为稳定、可用于生产的 API。它填补了 ComfyUI 可视化工作流设计与实际应用集成之间的空白。
 
+## 截图预览
+
+### ComfyUI 插件 - 导出对话框
+![Export to ComfySwap](docs/images/plugin_image0.png)
+
+### Comfy-Swap Web UI - 工作流 & 测试台
+![Workflows List](docs/images/main_01.png)
+
+![Playground](docs/images/main_02.png)
+
+---
+
 ## 它做什么
 
 Comfy-Swap 将复杂的 ComfyUI 工作流转换为**简单、统一的 API 端点**：
@@ -112,6 +124,8 @@ git clone https://github.com/your-repo/ComfyUI-ComfySwap.git
 
 在 ComfyUI 中：右键画布 → **Export to ComfySwap** → 配置参数 → Swap
 
+![Export Dialog](docs/images/plugin_image1.png)
+
 这会让你的工作流通过 Comfy-Swap 的统一 API 和 CLI 接口可用。
 
 ### 4. 调用 API
@@ -174,6 +188,15 @@ curl -X POST 'http://localhost:8189/api/prompt' \
 ```
 
 一个 `seed` 参数自动更新多个节点。你的 API 保持简洁。
+
+## 更多截图
+
+<details>
+<summary><b>请求日志</b></summary>
+
+![Logs](docs/images/main_03.png)
+
+</details>
 
 ## 许可证
 

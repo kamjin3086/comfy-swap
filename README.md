@@ -6,6 +6,18 @@
 
 **Comfy-Swap** exposes ComfyUI workflows as stable, production-ready APIs. It bridges the gap between ComfyUI's visual workflow design and real-world application integration.
 
+## Screenshots
+
+### ComfyUI Plugin - Export Dialog
+![Export to ComfySwap](docs/images/plugin_image0.png)
+
+### Comfy-Swap Web UI - Workflows & Playground
+![Workflows List](docs/images/main_01.png)
+
+![Playground](docs/images/main_02.png)
+
+---
+
 ## What It Does
 
 Comfy-Swap turns complex ComfyUI workflows into **simple, unified API endpoints** that are:
@@ -112,6 +124,8 @@ Restart ComfyUI after installation.
 
 In ComfyUI: Right-click canvas → **Export to ComfySwap** → Configure parameters → Swap
 
+![Export Dialog](docs/images/plugin_image1.png)
+
 This makes your workflow available through Comfy-Swap's unified API and CLI interface.
 
 ### 4. Call Your API
@@ -174,6 +188,15 @@ curl -X POST 'http://localhost:8189/api/prompt' \
 ```
 
 One `seed` parameter automatically updates multiple nodes. Your API stays clean.
+
+## More Screenshots
+
+<details>
+<summary><b>Request Logs</b></summary>
+
+![Logs](docs/images/main_03.png)
+
+</details>
 
 ## License
 
