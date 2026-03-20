@@ -90,6 +90,11 @@ async function loadPluginStatus() {
     if (status.installed) {
       badge.classList.add("connected");
       textEl.textContent = `Plugin: v${status.version || "?"}`;
+      
+      // Auto-sync pending workflows if any
+      if (status.pending_count > 0) {
+        await syncPendingWorkflows();
+      }
     } else {
       badge.classList.add("not-installed");
       textEl.textContent = "Plugin: Not Installed";
@@ -97,6 +102,21 @@ async function loadPluginStatus() {
   } catch (e) {
     badge.classList.add("not-installed");
     textEl.textContent = "Plugin: Not Detected";
+  }
+}
+
+async function syncPendingWorkflows() {
+  try {
+    const result = await jsonFetch("/api/sync-pending", { method: "POST" });
+    if (result.synced > 0) {
+      showToast(`Synced ${result.synced} workflow(s) from ComfyUI`, "success");
+      await loadWorkflows();
+    }
+    if (result.errors && result.errors.length > 0) {
+      console.warn("[ComfySwap] Sync errors:", result.errors);
+    }
+  } catch (e) {
+    console.warn("[ComfySwap] Failed to sync pending:", e);
   }
 }
 
