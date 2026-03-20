@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -77,7 +78,7 @@ func CheckLatestVersion(currentVersion string) (*CheckResult, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		result.Error = fmt.Sprintf("GitHub API returned status %d", resp.StatusCode)
-		return result, fmt.Errorf(result.Error)
+		return result, errors.New(result.Error)
 	}
 
 	var release ReleaseInfo
@@ -131,7 +132,7 @@ func Download(downloadURL, sha256URL string) (*DownloadResult, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		result.Error = fmt.Sprintf("download returned status %d", resp.StatusCode)
-		return result, fmt.Errorf(result.Error)
+		return result, errors.New(result.Error)
 	}
 
 	outFile, err := os.Create(downloadPath)

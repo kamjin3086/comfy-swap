@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -134,7 +135,7 @@ func runDownload(jsonOutput bool) error {
 		} else {
 			fmt.Printf("Error: %s\n", msg)
 		}
-		return fmt.Errorf(msg)
+		return errors.New(msg)
 	}
 
 	if !jsonOutput {
