@@ -517,9 +517,12 @@ func (a *App) handlePluginStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check plugin status endpoint
+	// Get local workflow list to push to plugin
+	workflows := a.getWorkflowInfoList()
+
+	// Check plugin status endpoint (POST with workflow list)
 	ctx := r.Context()
-	statusResp, err := p.GetPluginStatus(ctx)
+	statusResp, err := p.GetPluginStatus(ctx, workflows)
 	if err != nil {
 		writeJSON(w, http.StatusOK, map[string]interface{}{
 			"status":    "not_installed",
@@ -535,6 +538,23 @@ func (a *App) handlePluginStatus(w http.ResponseWriter, r *http.Request) {
 		"version":       statusResp["version"],
 		"pending_count": statusResp["pending_count"],
 	})
+}
+
+// getWorkflowInfoList returns minimal workflow info for syncing to plugin
+func (a *App) getWorkflowInfoList() []proxy.WorkflowInfo {
+	list, err := a.Manager.List()
+	if err != nil {
+		return nil
+	}
+	
+	result := make([]proxy.WorkflowInfo, 0, len(list))
+	for _, wf := range list {
+		result = append(result, proxy.WorkflowInfo{
+			ID:   wf.ID,
+			Name: wf.Name,
+		})
+	}
+	return result
 }
 
 func (a *App) handleSyncPending(w http.ResponseWriter, r *http.Request) {

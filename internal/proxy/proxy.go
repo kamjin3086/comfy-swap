@@ -123,9 +123,18 @@ func (p *ComfyProxy) UploadImage(ctx context.Context, filename string, r io.Read
 	return out, nil
 }
 
-func (p *ComfyProxy) GetPluginStatus(ctx context.Context) (map[string]interface{}, error) {
+// WorkflowInfo represents minimal workflow info for syncing
+type WorkflowInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func (p *ComfyProxy) GetPluginStatus(ctx context.Context, workflows []WorkflowInfo) (map[string]interface{}, error) {
 	out := map[string]interface{}{}
-	err := p.doJSON(ctx, http.MethodGet, "/comfyswap/status", nil, &out)
+	payload := map[string]interface{}{
+		"workflows": workflows,
+	}
+	err := p.doJSON(ctx, http.MethodPost, "/comfyswap/status", payload, &out)
 	return out, err
 }
 
