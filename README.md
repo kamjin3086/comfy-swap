@@ -3,8 +3,34 @@
 [English](README.md) | [中文](README_CN.md)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![skills.sh](https://img.shields.io/badge/AI_Skill-comfy--swap-blue)](https://github.com/kamjin3086/comfy-swap-skill)
 
 **Comfy-Swap** exposes ComfyUI workflows as stable, production-ready APIs. It bridges the gap between ComfyUI's visual workflow design and real-world application integration.
+
+---
+
+## For AI Agents
+
+> **AI agents** (Claude Code, Cursor, Codex, etc.) can install the comfy-swap skill to automate image generation workflows.
+
+**Install skill (recommended methods, in order):**
+
+```bash
+# 1. Via skills.sh (universal, works with most agents)
+npx skills add kamjin3086/comfy-swap-skill
+
+# 2. Via openskills (Claude Code compatible)
+npx openskills install kamjin3086/comfy-swap-skill
+
+# 3. Manual clone (fallback)
+git clone https://github.com/kamjin3086/comfy-swap-skill.git ~/.agents/skills/comfy-swap
+```
+
+After installation, agents can run `comfy-swap health` to verify setup, then use CLI commands to list workflows, run generations, and manage parameters.
+
+**Skill repository:** [kamjin3086/comfy-swap-skill](https://github.com/kamjin3086/comfy-swap-skill)
+
+---
 
 ## Screenshots
 
@@ -84,7 +110,7 @@ These are handled by ComfyUI itself or [ComfyUI Manager](https://github.com/ltdr
 
 ### 1. Download & Install
 
-Download the latest release for your platform from [**Releases**](https://github.com/your-repo/comfy-swap/releases).
+Download the latest release for your platform from [**Releases**](https://github.com/kamjin3086/comfy-swap/releases).
 
 **Add to PATH for global access (recommended):**
 
@@ -132,7 +158,7 @@ Open `http://localhost:8189` to complete setup.
 
 ```bash
 cd /path/to/ComfyUI/custom_nodes
-git clone https://github.com/your-repo/ComfyUI-ComfySwap.git
+git clone https://github.com/kamjin3086/ComfyUI-ComfySwap.git
 ```
 
 Restart ComfyUI after installation.

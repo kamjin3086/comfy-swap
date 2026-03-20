@@ -49,7 +49,7 @@ Usage notes:
 <skill>
 <name>comfy-swap</name>
 <description>Use Comfy-Swap CLI to run ComfyUI workflows, manage workflow parameters, and generate images. Trigger when user asks to run ComfyUI workflows, generate AI images, list workflows, modify workflow API parameters, inspect workflow nodes, adjust parameter mappings, check generation status, view request logs, or automate image generation tasks. Also trigger when user mentions comfy-swap, ComfyUI API, or image generation pipeline.</description>
-<location>project</location>
+<location>remote: npx skills add kamjin3086/comfy-swap-skill</location>
 </skill>
 
 <skill>
