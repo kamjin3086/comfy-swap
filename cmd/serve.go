@@ -25,7 +25,7 @@ func init() {
 			if err := config.EnsureDataDir(dataDir); err != nil {
 				return err
 			}
-			app, err := server.New(dataDir, assets.WebFS, assets.PluginFS)
+			app, err := server.New(dataDir, assets.WebFS)
 			if err != nil {
 				return err
 			}

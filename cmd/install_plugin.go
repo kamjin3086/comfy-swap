@@ -6,8 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"comfy-swap/internal/assets"
-	"comfy-swap/internal/server"
+	"comfy-swap/internal/plugin"
 
 	"github.com/spf13/cobra"
 )
@@ -15,7 +14,15 @@ import (
 func init() {
 	cmd := &cobra.Command{
 		Use:   "install-plugin <custom_nodes_path>",
-		Short: "Install comfy-swap ComfyUI plugin",
+		Short: "Install ComfyUI-ComfySwap plugin from GitHub",
+		Long: `Install the ComfyUI-ComfySwap plugin to enable workflow export.
+
+The plugin is downloaded from GitHub:
+  ` + plugin.GetRepoURL() + `
+
+Installation methods (in order of preference):
+  1. Git clone (if git is available)
+  2. Download ZIP and extract`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("custom_nodes path is required")
@@ -26,19 +33,21 @@ func init() {
 			target := args[0]
 			st, err := os.Stat(target)
 			if err != nil {
-				return err
+				return fmt.Errorf("cannot access %s: %w", target, err)
 			}
 			if !st.IsDir() {
 				return fmt.Errorf("%s is not a directory", target)
 			}
-			installer := &server.Installer{PluginFS: assets.PluginFS}
-			out, err := installer.InstallPlugin(target)
+
+			fmt.Printf("Installing ComfyUI-ComfySwap plugin to %s...\n", target)
+			result, err := plugin.Install(target)
 			if err != nil {
-				return err
+				return fmt.Errorf("installation failed: %w", err)
 			}
-			out, _ = filepath.Abs(out)
-			fmt.Printf("Installed comfy-swap plugin to %s\n", out)
-			fmt.Println("Please refresh ComfyUI page to load the plugin.")
+
+			absPath, _ := filepath.Abs(result.Path)
+			fmt.Printf("Installed via %s to %s\n", result.Method, absPath)
+			fmt.Println("Please restart or refresh ComfyUI to load the plugin.")
 			return nil
 		},
 	}

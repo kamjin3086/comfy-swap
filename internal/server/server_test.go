@@ -15,7 +15,7 @@ import (
 func TestAPISmoke(t *testing.T) {
 	t.Parallel()
 	dataDir := filepath.Join(t.TempDir(), "data")
-	app, err := New(dataDir, assets.WebFS, assets.PluginFS)
+	app, err := New(dataDir, assets.WebFS)
 	if err != nil {
 		t.Fatalf("New app failed: %v", err)
 	}

@@ -21,6 +21,7 @@ import (
 
 	"comfy-swap/internal/config"
 	"comfy-swap/internal/logs"
+	"comfy-swap/internal/plugin"
 	"comfy-swap/internal/proxy"
 	"comfy-swap/internal/workflow"
 
@@ -33,11 +34,10 @@ type App struct {
 	Manager      *workflow.Manager
 	LogManager   *logs.Manager
 	WebFS        embed.FS
-	PluginFS     embed.FS
 	ProxyFactory func(comfyURL string) *proxy.ComfyProxy
 }
 
-func New(dataDir string, webFS embed.FS, pluginFS embed.FS) (*App, error) {
+func New(dataDir string, webFS embed.FS) (*App, error) {
 	settingsPath, workflowsDir := config.ResolveDataPaths(dataDir)
 	logsDir := config.ResolveLogsDir(dataDir)
 	if err := config.EnsureDataDir(dataDir); err != nil {
@@ -49,7 +49,6 @@ func New(dataDir string, webFS embed.FS, pluginFS embed.FS) (*App, error) {
 		Manager:      workflow.NewManager(workflowsDir),
 		LogManager:   logs.NewManager(logsDir),
 		WebFS:        webFS,
-		PluginFS:     pluginFS,
 		ProxyFactory: proxy.New,
 	}, nil
 }
@@ -491,50 +490,20 @@ func (a *App) handleInstallPlugin(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, errors.New("custom_nodes_path is required"))
 		return
 	}
-	installer := &Installer{PluginFS: a.PluginFS}
-	path, err := installer.InstallPlugin(req.CustomNodesPath)
+	result, err := plugin.Install(req.CustomNodesPath)
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"installed": true,
-		"path":      path,
+		"path":      result.Path,
+		"method":    result.Method,
 	})
 }
 
 func (a *App) handleDownloadPlugin(w http.ResponseWriter, r *http.Request) {
-	buf := new(bytes.Buffer)
-	zw := zip.NewWriter(buf)
-
-	err := fs.WalkDir(a.PluginFS, "ComfyUI-ComfySwap", func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
-		}
-		data, err := fs.ReadFile(a.PluginFS, path)
-		if err != nil {
-			return err
-		}
-		fw, err := zw.Create(path)
-		if err != nil {
-			return err
-		}
-		_, err = fw.Write(data)
-		return err
-	})
-	if err != nil {
-		writeErr(w, http.StatusInternalServerError, err)
-		return
-	}
-	if err := zw.Close(); err != nil {
-		writeErr(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", "attachment; filename=comfy-swap-plugin.zip")
-	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
+	http.Redirect(w, r, plugin.GetDownloadURL(), http.StatusTemporaryRedirect)
 }
 
 func (a *App) handlePluginStatus(w http.ResponseWriter, r *http.Request) {
@@ -688,38 +657,6 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
-}
-
-type Installer struct {
-	PluginFS embed.FS
-}
-
-func (i *Installer) InstallPlugin(targetCustomNodesDir string) (string, error) {
-	target := filepath.Join(targetCustomNodesDir, "ComfyUI-ComfySwap")
-	if err := os.MkdirAll(target, 0o755); err != nil {
-		return "", err
-	}
-	sub, err := fs.Sub(i.PluginFS, "ComfyUI-ComfySwap")
-	if err != nil {
-		return "", err
-	}
-	err = fs.WalkDir(sub, ".", func(path string, d fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if d.IsDir() {
-			return os.MkdirAll(filepath.Join(target, path), 0o755)
-		}
-		b, err := fs.ReadFile(sub, path)
-		if err != nil {
-			return err
-		}
-		return os.WriteFile(filepath.Join(target, path), b, 0o644)
-	})
-	if err != nil {
-		return "", err
-	}
-	return target, nil
 }
 
 func SaveUploadedFileFromCLI(cli *http.Client, serverURL, filePath string) (string, error) {
