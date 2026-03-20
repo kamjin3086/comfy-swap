@@ -5,13 +5,45 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 )
 
 const (
-	DefaultPort    = "8189"
-	DefaultDataDir = "./data"
+	DefaultPort = "8189"
 )
+
+// DefaultDataDir returns the default data directory based on OS conventions.
+// Priority: COMFY_SWAP_DATA env > OS-specific default location
+//   - Windows: %APPDATA%\comfy-swap
+//   - macOS: ~/Library/Application Support/comfy-swap
+//   - Linux: ~/.local/share/comfy-swap (XDG_DATA_HOME)
+func DefaultDataDir() string {
+	if envDir := os.Getenv("COMFY_SWAP_DATA"); envDir != "" {
+		return envDir
+	}
+
+	switch runtime.GOOS {
+	case "windows":
+		if appData := os.Getenv("APPDATA"); appData != "" {
+			return filepath.Join(appData, "comfy-swap")
+		}
+	case "darwin":
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, "Library", "Application Support", "comfy-swap")
+		}
+	default: // linux and others
+		if xdgData := os.Getenv("XDG_DATA_HOME"); xdgData != "" {
+			return filepath.Join(xdgData, "comfy-swap")
+		}
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, ".local", "share", "comfy-swap")
+		}
+	}
+
+	// Fallback to current directory
+	return "./data"
+}
 
 type ServerConfig struct {
 	Port    string

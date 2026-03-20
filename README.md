@@ -43,7 +43,7 @@ curl -X POST 'http://localhost:8189/api/prompt' \
 ### CLI
 
 ```bash
-comfy-swap run portrait-gen -p prompt="professional headshot" -p seed="42" --wait --save ./output/
+comfy-swap run portrait-gen prompt="professional headshot" seed=42 --wait --save ./output/
 ```
 
 **Same workflow. Same parameters. Choose your interface.**
@@ -82,16 +82,44 @@ These are handled by ComfyUI itself or [ComfyUI Manager](https://github.com/ltdr
 
 ## Quick Start
 
-### 1. Download & Run
+### 1. Download & Install
 
 Download the latest release for your platform from [**Releases**](https://github.com/your-repo/comfy-swap/releases).
 
-```bash
-# Windows
-.\comfy-swap.exe serve --port 8189 --data-dir ./data
+**Add to PATH for global access (recommended):**
 
-# macOS / Linux
-./comfy-swap serve --port 8189 --data-dir ./data
+<details>
+<summary><b>Windows (PowerShell)</b></summary>
+
+```powershell
+# Copy to a PATH location (easiest)
+Copy-Item comfy-swap.exe -Destination "$env:LOCALAPPDATA\Microsoft\WindowsApps\"
+
+# Or add custom directory to PATH permanently
+$binPath = "C:\path\to\comfy-swap"
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";$binPath", "User")
+```
+</details>
+
+<details>
+<summary><b>macOS / Linux</b></summary>
+
+```bash
+# Move to a standard PATH location
+sudo mv comfy-swap /usr/local/bin/
+
+# Or add to PATH in shell profile
+echo 'export PATH="$PATH:/path/to/comfy-swap-dir"' >> ~/.bashrc
+source ~/.bashrc
+```
+</details>
+
+Verify installation: `comfy-swap version`
+
+### 2. Start the Server
+
+```bash
+comfy-swap serve
 ```
 
 Open `http://localhost:8189` to complete setup.
@@ -137,25 +165,29 @@ curl -X POST 'http://localhost:8189/api/prompt' \
   -d '{"workflow_id": "my-workflow", "params": {"prompt": "a cat"}}'
 
 # CLI
-./comfy-swap run my-workflow -p prompt="a cat" --wait
+comfy-swap run my-workflow prompt="a cat" --wait
 ```
 
 ## CLI Commands
 
 ```bash
 # Show all commands and options
-./comfy-swap --help
-./comfy-swap run --help
+comfy-swap --help
+comfy-swap run --help
 ```
 
 | Command | Description |
 |---------|-------------|
 | `serve` | Start HTTP server |
-| `run <id> -p key=value` | Execute workflow |
+| `config get/set` | View or update configuration |
 | `list` | List all workflows |
 | `info <id>` | Show workflow details |
+| `import` | Import workflow from JSON or sync pending |
+| `workflow` | Manage workflow parameters (nodes, add-param, update-param, etc.) |
+| `run <id> key=value` | Execute workflow |
 | `status <prompt_id>` | Check execution status |
 | `result <prompt_id>` | Get results (with `--save`) |
+| `logs` | View request logs |
 | `health` | Server health check |
 
 **Global flags:** `-s, --server` (server URL), `-q, --quiet`, `--json`, `--pretty`

@@ -9,6 +9,9 @@ comfy-swap.exe~
 *.test
 *.out
 
+.claude
+skills-lock.json
+
 # Build and coverage artifacts
 coverage.out
 coverage.txt

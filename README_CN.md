@@ -43,7 +43,7 @@ curl -X POST 'http://localhost:8189/api/prompt' \
 ### CLI
 
 ```bash
-comfy-swap run portrait-gen -p prompt="专业头像照" -p seed="42" --wait --save ./output/
+comfy-swap run portrait-gen prompt="专业头像照" seed=42 --wait --save ./output/
 ```
 
 **同一工作流，同一参数，自由选择接口。**
@@ -82,16 +82,44 @@ Comfy-Swap 专注于**工作流暴露和 API 集成**。它故意不做：
 
 ## 快速开始
 
-### 1. 下载 & 运行
+### 1. 下载 & 安装
 
 从 [**Releases**](https://github.com/your-repo/comfy-swap/releases) 下载适合你平台的最新版本。
 
-```bash
-# Windows
-.\comfy-swap.exe serve --port 8189 --data-dir ./data
+**添加到 PATH（推荐，可全局访问）：**
 
-# macOS / Linux
-./comfy-swap serve --port 8189 --data-dir ./data
+<details>
+<summary><b>Windows (PowerShell)</b></summary>
+
+```powershell
+# 复制到 PATH 目录（最简单）
+Copy-Item comfy-swap.exe -Destination "$env:LOCALAPPDATA\Microsoft\WindowsApps\"
+
+# 或将自定义目录永久添加到 PATH
+$binPath = "C:\path\to\comfy-swap"
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";$binPath", "User")
+```
+</details>
+
+<details>
+<summary><b>macOS / Linux</b></summary>
+
+```bash
+# 移动到标准 PATH 目录
+sudo mv comfy-swap /usr/local/bin/
+
+# 或添加到 shell 配置文件
+echo 'export PATH="$PATH:/path/to/comfy-swap-dir"' >> ~/.bashrc
+source ~/.bashrc
+```
+</details>
+
+验证安装：`comfy-swap version`
+
+### 2. 启动服务
+
+```bash
+comfy-swap serve
 ```
 
 打开 `http://localhost:8189` 完成设置。
@@ -137,25 +165,29 @@ curl -X POST 'http://localhost:8189/api/prompt' \
   -d '{"workflow_id": "my-workflow", "params": {"prompt": "一只猫"}}'
 
 # CLI
-./comfy-swap run my-workflow -p prompt="一只猫" --wait
+comfy-swap run my-workflow prompt="一只猫" --wait
 ```
 
 ## CLI 命令
 
 ```bash
 # 查看所有命令和选项
-./comfy-swap --help
-./comfy-swap run --help
+comfy-swap --help
+comfy-swap run --help
 ```
 
 | 命令 | 说明 |
 |------|------|
 | `serve` | 启动 HTTP 服务 |
-| `run <id> -p key=value` | 执行工作流 |
+| `config get/set` | 查看或更新配置 |
 | `list` | 列出所有工作流 |
 | `info <id>` | 查看工作流详情 |
+| `import` | 从 JSON 导入或同步待处理工作流 |
+| `workflow` | 管理工作流参数（nodes, add-param, update-param 等） |
+| `run <id> key=value` | 执行工作流 |
 | `status <prompt_id>` | 检查执行状态 |
 | `result <prompt_id>` | 获取结果（配合 `--save`） |
+| `logs` | 查看请求日志 |
 | `health` | 服务健康检查 |
 
 **全局参数：** `-s, --server`（服务地址）、`-q, --quiet`、`--json`、`--pretty`

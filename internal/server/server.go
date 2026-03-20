@@ -222,6 +222,10 @@ func (a *App) handleUpdateWorkflow(w http.ResponseWriter, r *http.Request) {
 	wf.ID = id
 	resp, err := a.Manager.Update(&wf)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			writeErr(w, http.StatusNotFound, err)
+			return
+		}
 		writeErr(w, http.StatusBadRequest, err)
 		return
 	}
