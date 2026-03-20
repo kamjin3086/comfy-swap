@@ -1,7 +1,7 @@
 name: Release
 
 # desc: cmd 
-# -> "C:\Program Files\GitHub CLI\gh.exe" workflow run release.yml -f version=v1.0.0
+# "C:\Program Files\GitHub CLI\gh.exe" workflow run release.yml -f version=<version>
 
 on:
   workflow_dispatch:
